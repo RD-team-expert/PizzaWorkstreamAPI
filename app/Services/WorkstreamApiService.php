@@ -82,45 +82,45 @@ class WorkstreamApiService
      * Refresh the access token using the /tokens/refresh_token endpoint.
      */
     public function refreshAccessToken()
-    {
-        // Get the existing token from the database (assume the latest one is valid)
-        $token = Token::latest()->first(); // Get the latest stored token
+{
+    // Get the existing token from the database (assume the latest one is valid)
+    $token = Token::latest()->first();
 
-        // If no token is found, return an error
-        if (!$token) {
-            throw new \Exception('No token found in the database.');
-        }
-
-        // Hardcode the /tokens/refresh_token endpoint URL
-        $apiUrl = $this->apiBaseUrl . '/tokens/refresh_token';
-
-        // Prepare the query parameters
-        $query = [
-            'grant_type'    => 'client_credentials',
-            'client_id'     => $this->clientId,
-            'client_secret' => $this->clientSecret,
-            'token'         => $token->token // Pass the current token to refresh it
-        ];
-
-        // Make a POST request to the /tokens/refresh_token endpoint
-        $response = Http::asForm()->post($apiUrl, $query);
-
-        // Check if the request was successful
-        if ($response->successful()) {
-            // Get the new token from the response
-            $newToken = $response->json()['access_token'];
-
-            // Update the token in the database (replace the old one)
-            $token->update([
-                'token' => $newToken
-            ]);
-
-            return $newToken;
-        }
-
-        // Handle failed request
-        throw new \Exception('Failed to refresh access token: ' . $response->body());
+    if (!$token) {
+        throw new \Exception('No token found in the database.');
     }
+
+    // Build the refresh token endpoint
+    $apiUrl = $this->apiBaseUrl . '/tokens/refresh_token';
+
+    // Make the request
+    $response = Http::post($apiUrl, [
+        'grant_type'    => 'client_credentials',
+        'client_id'     => $this->clientId,
+        'client_secret' => $this->clientSecret,
+        'token'         => $token->token
+    ]);
+
+    if ($response->successful()) {
+        $data = $response->json();
+
+        if (!isset($data['token'])) {
+            throw new \Exception('Expected token not found in response: ' . json_encode($data));
+        }
+
+        // Update the token in DB
+        $token->update([
+            'token'      => $data['token'],
+            'expires_in' => $data['expires_in'] ?? null,
+            'scopes'     => isset($data['scopes']) ? json_encode($data['scopes']) : null,
+        ]);
+
+        return $data['token'];
+    }
+
+    // Handle error
+    throw new \Exception('Failed to refresh access token: ' . $response->body());
+}
 
     public function getPositionApplications($embed = null, $status = null, $firstName = null, $lastName = null, $name = null, $currentStage = null, $positionUuid = null, $locationName = null, $tagName = null, $noteContent = null, $createdAtGte = null, $createdAtLte = null, $hiredAtGte = null, $hiredAtLte = null)
     {
