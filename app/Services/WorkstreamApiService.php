@@ -33,15 +33,15 @@ class WorkstreamApiService
         if (!$token) {
             // Define the scopes array
             $scopes = [
-                'positions',
-                'company_users',
-                'company_roles',
-                'position_applications',
-                'employees',
-                'locations',
-                'departments',
-                'team_members',
-                'imported_employee_infos'
+                "positions",
+                "company_users",
+                "company_roles",
+                "position_applications",
+                "employees",
+                "locations",
+                "departments",
+                "team_members",
+                "imported_employee_infos"
             ];
 
             // Hardcode the /tokens endpoint URL
