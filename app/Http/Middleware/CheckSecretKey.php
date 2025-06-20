@@ -21,8 +21,7 @@ class CheckSecretKey
         $secretKey = $request->header('X_SECRET_KEY');
         // Get the secret key from the .env file
         $expectedSecretKey = env('X_SECRET_KEY');
-        return $expectedSecretKey;
-        // Check if the secret key in the header matches the one in .env
+        
         if ($secretKey !== $expectedSecretKey) {
             // If it doesn't match, return unauthorized response
             return response()->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
