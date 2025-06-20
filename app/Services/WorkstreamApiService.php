@@ -157,21 +157,14 @@ public function getPositionApplications($embed = null, $status = null, $firstNam
                     $hiredAtGte,
                     $hiredAtLte
                 );
-
-                // Group by position UUID
-                $grouped = [];
+        
                 if (isset($applications['position_applications'])) {
-                    foreach ($applications['position_applications'] as $app) {
-                        $positionUuid = $app['position']['uuid'];
-                        $grouped[$positionUuid][] = $app;
-                    }
+                    $allApplications = array_merge($allApplications, $applications['position_applications']);
                 }
-
-                $allApplications = array_merge_recursive($allApplications, $grouped);
             }
         }
-
-        return $allApplications; // Returns grouped applications by position UUID
+        
+        return $allApplications; // Flat array of all applicants
     }
 
     // --- Original Logic Continues Here ---
