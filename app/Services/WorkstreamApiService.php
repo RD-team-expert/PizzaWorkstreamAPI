@@ -46,7 +46,6 @@ class WorkstreamApiService
 
             // Hardcode the /tokens endpoint URL
             $apiUrl = $this->apiBaseUrl . '/tokens';
-return $apiUrl;
             // Make a POST request to the /tokens endpoint to get a new token
             $response = Http::asForm()->post($apiUrl, [
                 'grant_type'    => 'client_credentials',
