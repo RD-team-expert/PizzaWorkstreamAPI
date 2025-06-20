@@ -35,7 +35,7 @@ class WorkstreamApiService
             // Hardcode the /tokens endpoint URL
             $apiUrl = $this->apiBaseUrl . '/tokens';
             // Make a POST request to the /tokens endpoint to get a new token
-            $responseWorkstream = Http::post($apiUrl, [
+            $response = Http::post($apiUrl, [
                 'grant_type'    => 'client_credentials',
                 'client_id'     => $this->clientId,
                 'client_secret' => $this->clientSecret,
@@ -52,19 +52,23 @@ class WorkstreamApiService
                     "imported_employee_infos"
                 ]
             ]);
-            return $responseWorkstream;
             // Check if the request was successful
             if ($response->successful()) {
-                // Get the token from the response
-                $token = $response->json()['access_token'];
-
-                // Store the token in the database
+                $data = $response->json();
+            
+                if (!isset($data['token'])) {
+                    throw new \Exception('Expected token not found: ' . json_encode($data));
+                }
+            
+                $token = $data['token'];
+            
                 Token::create([
                     'token' => $token
                 ]);
-
+            
                 return $token;
             }
+            
 
             // Handle failed request
             throw new \Exception('Failed to get access token: ' . $response->body());
