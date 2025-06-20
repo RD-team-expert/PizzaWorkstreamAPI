@@ -52,12 +52,12 @@ class WorkstreamApiService
                     "imported_employee_infos"
                 ]
             ]);
-
+            return $response;
             // Check if the request was successful
             if ($response->successful()) {
                 // Get the token from the response
                 $token = $response->json()['access_token'];
-return $token;
+
                 // Store the token in the database
                 Token::create([
                     'token' => $token
