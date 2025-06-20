@@ -122,73 +122,140 @@ class WorkstreamApiService
     throw new \Exception('Failed to refresh access token: ' . $response->body());
 }
 
-    public function getPositionApplications($embed = null, $status = null, $firstName = null, $lastName = null, $name = null, $currentStage = null, $positionUuid = null, $locationName = null, $tagName = null, $noteContent = null, $createdAtGte = null, $createdAtLte = null, $hiredAtGte = null, $hiredAtLte = null)
-    {
-        // Get the first stored token (do not generate a new one)
-        $token = Token::first();
+public function getPositionApplications($embed = null, $status = null, $firstName = null, $lastName = null, $name = null, $currentStage = null, $positionUuid = null, $locationName = null, $tagName = null, $noteContent = null, $createdAtGte = null, $createdAtLte = null, $hiredAtGte = null, $hiredAtLte = null)
+{
+    $token = Token::first();
 
-        if (!$token) {
-            throw new \Exception('No token found in the database.');
-        }
-
-        // Build the query parameters based on the optional parameters
-        $query = [];
-
-        if ($embed) {
-            $query['embed'] = $embed;
-        }
-        if ($status) {
-            $query['status'] = $status;
-        }
-        if ($firstName) {
-            $query['first_name'] = $firstName;
-        }
-        if ($lastName) {
-            $query['last_name'] = $lastName;
-        }
-        if ($name) {
-            $query['name'] = $name;
-        }
-        if ($currentStage) {
-            $query['current_stage'] = $currentStage;
-        }
-        if ($positionUuid) {
-            $query['position[uuid]'] = $positionUuid;
-        }
-        if ($locationName) {
-            $query['location[name]'] = $locationName;
-        }
-        if ($tagName) {
-            $query['tag[name]'] = $tagName;
-        }
-        if ($noteContent) {
-            $query['note[content]'] = $noteContent;
-        }
-        if ($createdAtGte) {
-            $query['created_at.gte'] = $createdAtGte;
-        }
-        if ($createdAtLte) {
-            $query['created_at.lte'] = $createdAtLte;
-        }
-        if ($hiredAtGte) {
-            $query['hired_at.gte'] = $hiredAtGte;
-        }
-        if ($hiredAtLte) {
-            $query['hired_at.lte'] = $hiredAtLte;
-        }
-
-        // Build the full URL with query parameters
-        $url = $this->apiBaseUrl . '/position_applications?' . http_build_query($query);
-
-        // Make the GET request with the Authorization header
-        $response = Http::withToken($token->token)->get($url);
-
-        // Check if the request was successful
-        if ($response->successful()) {
-            return $response->json(); // Return the response as JSON
-        }
-
-        // Handle failed request
-        throw new \Exception('Failed to fetch position applications: ' . $response->body());
+    if (!$token) {
+        throw new \Exception('No token found in the database.');
     }
+
+    // If no positionUuid is provided, fetch published positions
+    if (empty($positionUuid)) {
+        $positions = $this->getPublishedPositions();
+
+        $uuids = array_column($positions, 'uuid');
+
+        $chunks = array_chunk($uuids, 2);
+        $allApplications = [];
+
+        foreach ($chunks as $chunk) {
+            foreach ($chunk as $uuid) {
+                $applications = $this->getPositionApplications(
+                    $embed,
+                    $status,
+                    $firstName,
+                    $lastName,
+                    $name,
+                    $currentStage,
+                    $uuid,
+                    $locationName,
+                    $tagName,
+                    $noteContent,
+                    $createdAtGte,
+                    $createdAtLte,
+                    $hiredAtGte,
+                    $hiredAtLte
+                );
+
+                // Group by position UUID
+                $grouped = [];
+                if (isset($applications['position_applications'])) {
+                    foreach ($applications['position_applications'] as $app) {
+                        $positionUuid = $app['position']['uuid'];
+                        $grouped[$positionUuid][] = $app;
+                    }
+                }
+
+                $allApplications = array_merge_recursive($allApplications, $grouped);
+            }
+        }
+
+        return $allApplications; // Returns grouped applications by position UUID
+    }
+
+    // --- Original Logic Continues Here ---
+
+    $query = [];
+
+    if ($embed) {
+        $query['embed'] = $embed;
+    }
+    if ($status) {
+        $query['status'] = $status;
+    }
+    if ($firstName) {
+        $query['first_name'] = $firstName;
+    }
+    if ($lastName) {
+        $query['last_name'] = $lastName;
+    }
+    if ($name) {
+        $query['name'] = $name;
+    }
+    if ($currentStage) {
+        $query['current_stage'] = $currentStage;
+    }
+    if ($positionUuid) {
+        $query['position[uuid]'] = $positionUuid;
+    }
+    if ($locationName) {
+        $query['location[name]'] = $locationName;
+    }
+    if ($tagName) {
+        $query['tag[name]'] = $tagName;
+    }
+    if ($noteContent) {
+        $query['note[content]'] = $noteContent;
+    }
+    if ($createdAtGte) {
+        $query['created_at.gte'] = $createdAtGte;
+    }
+    if ($createdAtLte) {
+        $query['created_at.lte'] = $createdAtLte;
+    }
+    if ($hiredAtGte) {
+        $query['hired_at.gte'] = $hiredAtGte;
+    }
+    if ($hiredAtLte) {
+        $query['hired_at.lte'] = $hiredAtLte;
+    }
+
+    $url = $this->apiBaseUrl . '/position_applications?' . http_build_query($query);
+
+    $response = Http::withToken($token->token)->get($url);
+
+    if ($response->successful()) {
+        return $response->json();
+    }
+
+    throw new \Exception('Failed to fetch position applications: ' . $response->body());
+}
+
+
+    public function getPublishedPositions()
+{
+    $token = Token::first();
+
+    if (!$token) {
+        throw new \Exception('No token found in the database.');
+    }
+
+    $url = $this->apiBaseUrl . '/positions?status=published';
+
+    $response = Http::withToken($token->token)->get($url);
+
+    if ($response->successful()) {
+        $data = $response->json();
+
+        if (!isset($data['positions'])) {
+            throw new \Exception('Expected positions not found in response: ' . json_encode($data));
+        }
+
+        return $data['positions'];
+    }
+
+    throw new \Exception('Failed to fetch published positions: ' . $response->body());
+}
+
 }
