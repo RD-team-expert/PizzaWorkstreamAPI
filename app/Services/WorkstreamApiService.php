@@ -31,28 +31,26 @@ class WorkstreamApiService
 
         // If no token is found in the database, request a new one
         if (!$token) {
-            // Define the scopes array
-            $scopes = [
-                "positions",
-                "company_users",
-                "company_roles",
-                "position_applications",
-                "employees",
-                "locations",
-                "departments",
-                "team_members",
-                "imported_employee_infos"
-            ];
 
             // Hardcode the /tokens endpoint URL
             $apiUrl = $this->apiBaseUrl . '/tokens';
             // Make a POST request to the /tokens endpoint to get a new token
-            $response = Http::asForm()->post($apiUrl, [
+            $response = Http::post($apiUrl, [
                 'grant_type'    => 'client_credentials',
                 'client_id'     => $this->clientId,
                 'client_secret' => $this->clientSecret,
-                'name'          => 'Adler Test', // Token name you choose
-                'scopes'        => $scopes
+                'name'          => 'Adler Test',
+                'scopes'        => [
+                    "positions",
+                    "company_users",
+                    "company_roles",
+                    "position_applications",
+                    "employees",
+                    "locations",
+                    "departments",
+                    "team_members",
+                    "imported_employee_infos"
+                ]
             ]);
 
             // Check if the request was successful
