@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Services\WorkstreamApiService;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class ApiController extends Controller
 {
@@ -51,4 +53,37 @@ class ApiController extends Controller
         }
     }
 
+    public function updateDataWarehouse(Request $request)
+    {
+        try {
+            // Validate that 'date' is present and in a valid format
+            $request->validate([
+                'date' => 'required|date',
+            ]);
+            
+            $date = $request->input('date');
+    
+            // Call the service method with the date
+            $result = $this->workstreamApiService->updateDataWarehouse($date);
+    
+            return response()->json([
+                'success' => true,
+                'data' => $result,
+            ]);
+    
+        } catch (ValidationException $e) {
+            // Return validation error messages in custom format
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors(),
+            ], 422); // 422 Unprocessable Entity
+    
+        } catch (\Exception $e) {
+            // Handle other errors
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

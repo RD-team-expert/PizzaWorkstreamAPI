@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Token;  // Import the Token model
 use Illuminate\Support\Facades\Http;
+use Carbon\Carbon; // For safe date parsing
+use App\Models\Applicant;
 
 class WorkstreamApiService
 {
@@ -249,6 +251,18 @@ public function getPositionApplications($embed = null, $status = null, $firstNam
     }
 
     throw new \Exception('Failed to fetch published positions: ' . $response->body());
+}
+
+public function updateDataWarehouse($date)
+{
+    // Validate and parse the date using Carbon
+    try {
+        $parsedDate = Carbon::parse($date);
+    } catch (\Exception $e) {
+        throw new \Exception("Invalid date format provided.");
+    }
+    // Fetch all applications created after the given date
+    return Applicant::where('created_at', '>', $parsedDate)->get();
 }
 
 }

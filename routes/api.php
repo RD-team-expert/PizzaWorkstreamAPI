@@ -10,4 +10,5 @@ Route::middleware(['excel_secret'])->group(function () {
     Route::get('/test-middleware', function () {
         return response()->json(['success' => true]);
     });
+    Route::get('/update-data-warehouse', [ApiController::class, 'updateDataWarehouse']);
 });
