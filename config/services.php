@@ -40,4 +40,8 @@ return [
         'client_id' => env('WORKSTREAM_CLIENT_ID'),
         'client_secret' => env('WORKSTREAM_CLIENT_SECRET'),
     ],
+
+
+    'excel' => env('X_SECRET_KEY'),
+
 ];

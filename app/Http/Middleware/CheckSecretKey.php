@@ -20,8 +20,8 @@ class CheckSecretKey
         // Get the secret key from the request header (case-insensitive)
         $secretKey = $request->header('X_SECRET_KEY');
         // Get the secret key from the .env file
-        $expectedSecretKey = env('X_SECRET_KEY');
-        
+        $expectedSecretKey = config('services.excel');
+
         if ($secretKey !== $expectedSecretKey) {
             // If it doesn't match, return unauthorized response
             return response()->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
