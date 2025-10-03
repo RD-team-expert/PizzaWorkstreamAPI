@@ -41,7 +41,7 @@ class WorkstreamApiService
                 'grant_type'    => 'client_credentials',
                 'client_id'     => $this->clientId,
                 'client_secret' => $this->clientSecret,
-                'name'          => 'Adler Test',
+                'name'          => 'Maria Lauder',
                 'scopes'        => [
                     "positions",
                     "company_users",
@@ -57,20 +57,20 @@ class WorkstreamApiService
             // Check if the request was successful
             if ($response->successful()) {
                 $data = $response->json();
-            
+
                 if (!isset($data['token'])) {
                     throw new \Exception('Expected token not found: ' . json_encode($data));
                 }
-            
+
                 $token = $data['token'];
-            
+
                 Token::create([
                     'token' => $token
                 ]);
-            
+
                 return $token;
             }
-            
+
 
             // Handle failed request
             throw new \Exception('Failed to get access token: ' . $response->body());
@@ -84,45 +84,45 @@ class WorkstreamApiService
      * Refresh the access token using the /tokens/refresh_token endpoint.
      */
     public function refreshAccessToken()
-{
-    // Get the existing token from the database (assume the latest one is valid)
-    $token = Token::latest()->first();
+    {
+        // Get the existing token from the database (assume the latest one is valid)
+        $token = Token::latest()->first();
 
-    if (!$token) {
-        throw new \Exception('No token found in the database.');
-    }
-
-    // Build the refresh token endpoint
-    $apiUrl = $this->apiBaseUrl . '/tokens/refresh_token';
-
-    // Make the request
-    $response = Http::post($apiUrl, [
-        'grant_type'    => 'client_credentials',
-        'client_id'     => $this->clientId,
-        'client_secret' => $this->clientSecret,
-        'token'         => $token->token
-    ]);
-
-    if ($response->successful()) {
-        $data = $response->json();
-
-        if (!isset($data['token'])) {
-            throw new \Exception('Expected token not found in response: ' . json_encode($data));
+        if (!$token) {
+            throw new \Exception('No token found in the database.');
         }
 
-        // Update the token in DB
-        $token->update([
-            'token'      => $data['token'],
-            'expires_in' => $data['expires_in'] ?? null,
-            'scopes'     => isset($data['scopes']) ? json_encode($data['scopes']) : null,
+        // Build the refresh token endpoint
+        $apiUrl = $this->apiBaseUrl . '/tokens/refresh_token';
+
+        // Make the request
+        $response = Http::post($apiUrl, [
+            'grant_type'    => 'client_credentials',
+            'client_id'     => $this->clientId,
+            'client_secret' => $this->clientSecret,
+            'token'         => $token->token
         ]);
 
-        return $data['token'];
-    }
+        if ($response->successful()) {
+            $data = $response->json();
 
-    // Handle error
-    throw new \Exception('Failed to refresh access token: ' . $response->body());
-}
+            if (!isset($data['token'])) {
+                throw new \Exception('Expected token not found in response: ' . json_encode($data));
+            }
+
+            // Update the token in DB
+            $token->update([
+                'token'      => $data['token'],
+                'expires_in' => $data['expires_in'] ?? null,
+                'scopes'     => isset($data['scopes']) ? json_encode($data['scopes']) : null,
+            ]);
+
+            return $data['token'];
+        }
+
+        // Handle error
+        throw new \Exception('Failed to refresh access token: ' . $response->body());
+    }
 
 public function getPositionApplications($embed = null, $status = null, $firstName = null, $lastName = null, $name = null, $currentStage = null, $positionUuid = null, $locationName = null, $tagName = null, $noteContent = null, $createdAtGte = null, $createdAtLte = null, $hiredAtGte = null, $hiredAtLte = null)
 {
@@ -159,13 +159,13 @@ public function getPositionApplications($embed = null, $status = null, $firstNam
                     $hiredAtGte,
                     $hiredAtLte
                 );
-        
+
                 if (isset($applications['position_applications'])) {
                     $allApplications = array_merge($allApplications, $applications['position_applications']);
                 }
             }
         }
-        
+
         return $allApplications; // Flat array of all applicants
     }
 
@@ -227,42 +227,41 @@ public function getPositionApplications($embed = null, $status = null, $firstNam
     throw new \Exception('Failed to fetch position applications: ' . $response->body());
 }
 
-
     public function getPublishedPositions()
-{
-    $token = Token::first();
+    {
+        $token = Token::first();
 
-    if (!$token) {
-        throw new \Exception('No token found in the database.');
-    }
-
-    $url = $this->apiBaseUrl . '/positions?status=published';
-
-    $response = Http::withToken($token->token)->get($url);
-
-    if ($response->successful()) {
-        $data = $response->json();
-
-        if (!isset($data['positions'])) {
-            throw new \Exception('Expected positions not found in response: ' . json_encode($data));
+        if (!$token) {
+            throw new \Exception('No token found in the database.');
         }
 
-        return $data['positions'];
+        $url = $this->apiBaseUrl . '/positions?status=published';
+
+        $response = Http::withToken($token->token)->get($url);
+
+        if ($response->successful()) {
+            $data = $response->json();
+
+            if (!isset($data['positions'])) {
+                throw new \Exception('Expected positions not found in response: ' . json_encode($data));
+            }
+
+            return $data['positions'];
+        }
+
+        throw new \Exception('Failed to fetch published positions: ' . $response->body());
     }
 
-    throw new \Exception('Failed to fetch published positions: ' . $response->body());
-}
-
-public function updateDataWarehouse($date)
-{
-    // Validate and parse the date using Carbon
-    try {
-        $parsedDate = Carbon::parse($date);
-    } catch (\Exception $e) {
-        throw new \Exception("Invalid date format provided.");
+    public function updateDataWarehouse($date)
+    {
+        // Validate and parse the date using Carbon
+        try {
+            $parsedDate = Carbon::parse($date);
+        } catch (\Exception $e) {
+            throw new \Exception("Invalid date format provided.");
+        }
+        // Fetch all applications created after the given date
+        return Applicant::where('created_at', '>', $parsedDate)->get();
     }
-    // Fetch all applications created after the given date
-    return Applicant::where('created_at', '>', $parsedDate)->get();
-}
 
 }

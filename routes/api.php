@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ApiController;
+use App\Http\Controllers\WorkStreamExporter;
 use Illuminate\Support\Facades\Route;
 
 
@@ -11,4 +12,9 @@ Route::middleware(['excel_secret'])->group(function () {
         return response()->json(['success' => true]);
     });
     Route::get('/update-data-warehouse', [ApiController::class, 'updateDataWarehouse']);
+
+    Route::get('/applicants-csv', [WorkStreamExporter::class, 'exportCsv']);
 });
+
+
+

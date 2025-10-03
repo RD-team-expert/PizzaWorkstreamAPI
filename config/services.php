@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'workstream' => [
+        'base_url' => env('WORKSTREAM_API_BASE_URL', 'https://api.workstream.us'),
+        'client_id' => env('WORKSTREAM_CLIENT_ID'),
+        'client_secret' => env('WORKSTREAM_CLIENT_SECRET'),
+    ],
 ];
